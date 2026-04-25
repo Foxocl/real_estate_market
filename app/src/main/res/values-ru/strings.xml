@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">My Application</string>
+    <string name="profile_title">ПРОФИЛЬ</string>
+    <string name="new_title">НОВАЯ ЖИЛПЛОЩАДЬ</string>
+    <string name="catalog_title">КАТАЛОГ</string>
+    <string name="name_label">Имя</string>
+    <string name="name_placeholder">Профиль</string>
+    <string name="email_label">Почта</string>
+    <string name="icon_name_desc">Имя иконка</string>
+    <string name="icon_email_desc">Почта icon</string>
+    <string name="icon_phone_desc">Телефон icon</string>
+    <string name="email_placeholder">hello@example.com</string>
+    <string name="phone_label">Контактный номер</string>
+    <string name="phone_placeholder">+1234567890</string>
+    <string name="edit_name_desc">Редактировать имя</string>
+    <string name="edit_email_desc">Редактировать почту</string>
+    <string name="edit_phone_desc">Редактировать номер</string>
+    <string name="view_offers_desc">Показать предложения</string>
+    <string name="view_offers">Показать предложения</string>
+    <string name="settings_title">Настройки</string>
+    <string name="language_label">Язык</string>
+    <string name="rooms_label">Количество комнат</string>
+    <string name="floor_label">Этаж</string>
+    <string name="locality_label">Населенный пункт</string>
+    <string name="street_label">Улица</string>
+    <string name="house_label">Номер дома</string>
+    <string name="prop_label">Вид недвижимости</string>
+    <string name="language_placeholder">Русский</string>
+    <string name="theme_label">Тема</string>
+    <string name="theme_placeholder">Светлая</string>
+    <string name="prop_placeholder">Ничего не выбрано</string>
+    <string name="icon_language_desc">Language icon</string>
+    <string name="icon_theme_desc">Theme icon</string>
+    <string name="transaction_type_label">Тип сделки</string>
+    <string name="sale">Продажа</string>
+    <string name="rent">Сдача в аренду</string>
+    <string name="price_label">Цена</string>
+    <string name="negotiable_no">Возможен</string>
+    <string name="negotiable_yes">Невозможен</string>
+    <string name="negotiable_label">Торг</string>
+    <string name="save">Сохранить</string>
+</resources>

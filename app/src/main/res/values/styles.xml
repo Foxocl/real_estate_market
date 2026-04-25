@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="TransactionTypeRadioButton" parent="Widget.AppCompat.CompoundButton.RadioButton">
+        <item name="android:button">@null</item>
+        <item name="android:gravity">center</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/transaction_type_text_color</item>
+        <item name="android:background">@drawable/selector_transaction_type</item>
+    </style>
+</resources>

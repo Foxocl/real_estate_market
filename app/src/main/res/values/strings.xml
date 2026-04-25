@@ -1,0 +1,44 @@
+<resources>
+    <string name="app_name">My Application</string>
+    <string name="profile_title">PROFILE</string>
+    <string name="new_title">NEW ACCOMMODATION</string>
+    <string name="catalog_title">CATALOG</string>
+    <string name="name_label">Name</string>
+    <string name="name_placeholder">Profile</string>
+    <string name="email_label">Contact</string>
+    <string name="email_placeholder">hello@example.com</string>
+    <string name="phone_label">Phone Number</string>
+    <string name="phone_placeholder">+1234567890</string>
+    <string name="icon_name_desc">Name icon</string>
+    <string name="icon_email_desc">Email icon</string>
+    <string name="icon_phone_desc">Phone icon</string>
+    <string name="edit_name_desc">Edit name</string>
+    <string name="edit_email_desc">Edit email</string>
+    <string name="edit_phone_desc">Edit phone</string>
+    <string name="view_offers_desc">View added offers</string>
+    <string name="view_offers">View Added Offers</string>
+    <string name="settings_title">Settings</string>
+    <string name="language_label">Language</string>
+    <string name="rooms_label">Number of rooms</string>
+    <string name="floor_label">Floor</string>
+    <string name="locality_label">Locality</string>
+    <string name="street_label">Street</string>
+    <string name="house_label">House number</string>
+    <string name="prop_label">Type of property</string>
+    <string name="language_placeholder">English</string>
+    <string name="theme_label">Theme</string>
+    <string name="theme_placeholder">Light</string>
+    <string name="prop_placeholder">Nothing selected</string>
+    <string name="icon_language_desc">Language icon</string>
+    <string name="icon_theme_desc">Theme icon</string>
+    <string name="transaction_type_label">Transation type</string>
+    <string name="sale">Sale</string>
+    <string name="rent">Rent</string>
+    <string name="price_label">Price</string>
+    <string name="negotiable_no">Possible</string>
+    <string name="negotiable_yes">Impossible</string>
+    <string name="negotiable_label">Bargaining</string>
+    <string name="save">Save</string>
+
+
+</resources>
