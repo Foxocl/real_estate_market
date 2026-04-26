@@ -33,11 +33,15 @@ class CatalogFragment : Fragment() {
         db = PropertyDatabase.getInstance(requireContext())
 
         adapter = PropertyListingAdapter { listing ->
-            android.widget.Toast.makeText(
-                requireContext(),
-                "You have chosen: ${listing.propertyType}",
-                android.widget.Toast.LENGTH_SHORT
-            ).show()
+            val fragment = NewItemFragment()
+            val args = Bundle()
+            args.putLong("listingId", listing.id)
+            fragment.arguments = args
+
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, fragment)
+                .addToBackStack(null)
+                .commit()
         }
 
         binding.recyclerView.apply {

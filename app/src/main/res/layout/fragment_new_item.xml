@@ -361,5 +361,15 @@
             android:backgroundTint="?attr/colorPrimary"
             android:textColor="@android:color/white"
             style="@style/Widget.Material3.Button" />
+        <Button
+            android:id="@+id/btnDelete"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Delete"
+            android:backgroundTint="?attr/colorError"
+            android:textColor="@android:color/white"
+            android:visibility="gone"/>
     </LinearLayout>
+
 </ScrollView>
