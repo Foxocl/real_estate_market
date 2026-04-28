@@ -6,13 +6,13 @@ import androidx.room.RoomDatabase
 import android.content.Context
 
 @Database(
-    entities = [PropertyListing::class],
-    version = 1,
+    entities = [PropertyListing::class, CachedGeocode::class],
+    version = 3,
     exportSchema = false
 )
 abstract class PropertyDatabase : RoomDatabase() {
     abstract fun propertyListingDao(): PropertyListingDao
-
+    abstract fun geocodeDao(): GeocodeDao
     companion object {
         @Volatile
         private var INSTANCE: PropertyDatabase? = null
@@ -23,7 +23,8 @@ abstract class PropertyDatabase : RoomDatabase() {
                     context.applicationContext,
                     PropertyDatabase::class.java,
                     "property_database"
-                ).build()
+                ).fallbackToDestructiveMigration()
+                .build()
                 INSTANCE = instance
                 instance
             }

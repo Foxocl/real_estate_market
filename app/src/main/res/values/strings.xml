@@ -39,6 +39,6 @@
     <string name="negotiable_yes">Impossible</string>
     <string name="negotiable_label">Bargaining</string>
     <string name="save">Save</string>
-
-
+    <string name="delete">Delete</string>
+    <string name="country">Country</string>
 </resources>

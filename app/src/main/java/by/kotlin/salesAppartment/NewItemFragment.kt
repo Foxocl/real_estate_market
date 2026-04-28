@@ -7,18 +7,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import by.kotlin.salesAppartment.databinding.FragmentNewItemBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
 class NewItemFragment : Fragment() {
 
     private var _binding: FragmentNewItemBinding? = null
     private val binding get() = _binding!!
 
     private lateinit var db: PropertyDatabase
+    private lateinit var nominatimViewModel: NominatimViewModel
     private var listingId: Long = -1
 
     private val propertyTypes = listOf(
@@ -36,7 +37,7 @@ class NewItemFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         _binding = FragmentNewItemBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -44,6 +45,7 @@ class NewItemFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         db = PropertyDatabase.getInstance(requireContext())
+        nominatimViewModel = ViewModelProvider(this).get(NominatimViewModel::class.java)
 
         binding.layoutPropertyType.setOnClickListener {
             showPropertyTypeDialog()
@@ -68,20 +70,18 @@ class NewItemFragment : Fragment() {
             val listing = db.propertyListingDao().getListingById(listingId)
             if (listing != null) {
                 withContext(Dispatchers.Main) {
-                    if (listing.transactionType == "Sale") {
-                        binding.radioSale.isChecked = true
-                    } else {
-                        binding.radioRent.isChecked = true
-                    }
+                    if (listing.transactionType == "Sale") binding.radioSale.isChecked = true
+                    else binding.radioRent.isChecked = true
                     binding.tvTheme.text = listing.propertyType
-                    if (listing.rooms != null) binding.etRooms.setText(listing.rooms.toString())
-                    if (listing.floor != null) binding.etFloor.setText(listing.floor.toString())
+                    binding.etRooms.setText(listing.rooms?.toString() ?: "")
+                    binding.etFloor.setText(listing.floor?.toString() ?: "")
+                    binding.etCountry.setText(listing.country)
                     binding.etLocality.setText(listing.locality)
                     binding.etStreet.setText(listing.street)
                     binding.etHouseNumber.setText(listing.houseNumber)
-                    if (listing.negotiable) binding.radioNegotiableYes.isChecked
-                    else binding.radioNegotiableNo.isChecked
-                    if (listing.price != null) binding.etPrice.setText(listing.price.toString())
+                    binding.radioNegotiableYes.isChecked = listing.negotiable
+                    binding.radioNegotiableNo.isChecked = !listing.negotiable
+                    binding.etPrice.setText(listing.price?.toString() ?: "")
                 }
             }
         }
@@ -108,26 +108,34 @@ class NewItemFragment : Fragment() {
         val propertyType = binding.tvTheme.text.toString()
         val rooms = binding.etRooms.text.toString().toIntOrNull()
         val floor = binding.etFloor.text.toString().toIntOrNull()
-        val locality = binding.etLocality.text.toString()
-        val street = binding.etStreet.text.toString()
-        val houseNumber = binding.etHouseNumber.text.toString()
+        val country = binding.etCountry.text.toString().trim()
+        val locality = binding.etLocality.text.toString().trim()
+        val street = binding.etStreet.text.toString().trim()
+        val houseNumber = binding.etHouseNumber.text.toString().trim()
         val negotiable = binding.radioNegotiableYes.isChecked
         val price = binding.etPrice.text.toString().toDoubleOrNull()
 
-        val listing = PropertyListing(
-            transactionType = transactionType,
-            propertyType = propertyType,
-            rooms = rooms,
-            floor = floor,
-            locality = locality,
-            street = street,
-            houseNumber = houseNumber,
-            negotiable = negotiable,
-            price = price
-        )
+        val fullAddress = "$country, $locality, $street $houseNumber"
 
         lifecycleScope.launch(Dispatchers.IO) {
+            val coords = nominatimViewModel.fetchCoordinates(fullAddress)
+
+            val listing = PropertyListing(
+                transactionType = transactionType,
+                propertyType = propertyType,
+                rooms = rooms,
+                floor = floor,
+                country = country,
+                locality = locality,
+                street = street,
+                houseNumber = houseNumber,
+                negotiable = negotiable,
+                price = price,
+                latitude = coords?.first,
+                longitude = coords?.second
+            )
             db.propertyListingDao().insert(listing)
+
             withContext(Dispatchers.Main) {
                 Toast.makeText(requireContext(), "Saved", Toast.LENGTH_SHORT).show()
                 parentFragmentManager.popBackStack()
@@ -142,27 +150,31 @@ class NewItemFragment : Fragment() {
         val propertyType = binding.tvTheme.text.toString()
         val rooms = binding.etRooms.text.toString().toIntOrNull()
         val floor = binding.etFloor.text.toString().toIntOrNull()
-        val locality = binding.etLocality.text.toString()
-        val street = binding.etStreet.text.toString()
-        val houseNumber = binding.etHouseNumber.text.toString()
+        val country = binding.etCountry.text.toString().trim()
+        val locality = binding.etLocality.text.toString().trim()
+        val street = binding.etStreet.text.toString().trim()
+        val houseNumber = binding.etHouseNumber.text.toString().trim()
         val negotiable = binding.radioNegotiableYes.isChecked
         val price = binding.etPrice.text.toString().toDoubleOrNull()
 
-        val updatedListing = PropertyListing(
-            id = listingId,
-            transactionType = transactionType,
-            propertyType = propertyType,
-            rooms = rooms,
-            floor = floor,
-            locality = locality,
-            street = street,
-            houseNumber = houseNumber,
-            negotiable = negotiable,
-            price = price,
-            createdAt = System.currentTimeMillis()
-        )
-
         lifecycleScope.launch(Dispatchers.IO) {
+            val existing = db.propertyListingDao().getListingById(listingId)
+            val updatedListing = PropertyListing(
+                id = listingId,
+                transactionType = transactionType,
+                propertyType = propertyType,
+                rooms = rooms,
+                floor = floor,
+                country = country,
+                locality = locality,
+                street = street,
+                houseNumber = houseNumber,
+                negotiable = negotiable,
+                price = price,
+                createdAt = existing?.createdAt ?: System.currentTimeMillis(),
+                latitude = existing?.latitude,
+                longitude = existing?.longitude
+            )
             db.propertyListingDao().update(updatedListing)
             withContext(Dispatchers.Main) {
                 Toast.makeText(requireContext(), "Updated", Toast.LENGTH_SHORT).show()
@@ -192,6 +204,10 @@ class NewItemFragment : Fragment() {
     private fun validateFields(): Boolean {
         if (binding.tvTheme.text.isBlank()) {
             binding.tvTheme.error = "Select property type"
+            return false
+        }
+        if (binding.etCountry.text.isBlank()) {
+            binding.etCountry.error = "Enter country"
             return false
         }
         if (binding.etLocality.text.isBlank()) {

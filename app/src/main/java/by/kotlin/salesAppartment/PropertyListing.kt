@@ -22,6 +22,7 @@ data class PropertyListing(
     val floor: Int? = null,
 
     // Address components
+    val country: String,
     val locality: String,
     val street: String,
     val houseNumber: String,
@@ -30,5 +31,8 @@ data class PropertyListing(
 
     val price: Double? = null,
 
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+
+    var latitude: Double? = null,
+    var longitude: Double? = null
 )

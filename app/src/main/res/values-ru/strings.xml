@@ -40,4 +40,6 @@
     <string name="negotiable_yes">Невозможен</string>
     <string name="negotiable_label">Торг</string>
     <string name="save">Сохранить</string>
+    <string name="delete">Удалить</string>
+    <string name="country">Страна</string>
 </resources>

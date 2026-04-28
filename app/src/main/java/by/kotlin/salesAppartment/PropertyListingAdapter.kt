@@ -10,7 +10,8 @@ import java.text.DecimalFormatSymbols
 import java.util.Locale
 
 class PropertyListingAdapter(
-    private val onItemClick: (PropertyListing) -> Unit
+    private val onItemClick: (PropertyListing) -> Unit,
+    private val onItemLongClick: (PropertyListing) -> Boolean  // ← добавлено
 ) : RecyclerView.Adapter<PropertyListingAdapter.ViewHolder>() {
 
     private var listings = listOf<PropertyListing>()
@@ -29,7 +30,14 @@ class PropertyListingAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val listing = listings[position]
         holder.bind(listing)
+
+        // Короткое нажатие
         holder.itemView.setOnClickListener { onItemClick(listing) }
+
+        // Долгое нажатие
+        holder.itemView.setOnLongClickListener {
+            onItemLongClick(listing)
+        }
     }
 
     override fun getItemCount() = listings.size

@@ -182,7 +182,38 @@
                     android:background="@drawable/edit_text_bottom_border" />
             </LinearLayout>
         </LinearLayout>
+        <!-- ===== Country ===== -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp">
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/country"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:textSize="14sp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <EditText
+                    android:id="@+id/etCountry"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/prop_placeholder"
+                    android:maxLines="1"
+                    android:paddingVertical="12dp"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="16sp"
+                    android:background="@drawable/edit_text_bottom_border" />
+            </LinearLayout>
+        </RelativeLayout>
         <!-- Locality -->
         <RelativeLayout
             android:layout_width="match_parent"
@@ -366,7 +397,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Delete"
+            android:text="@string/delete"
             android:backgroundTint="?attr/colorError"
             android:textColor="@android:color/white"
             android:visibility="gone"/>
