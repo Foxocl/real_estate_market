@@ -3,15 +3,17 @@ package by.kotlin.salesAppartment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
 
 class PropertyListingAdapter(
     private val onItemClick: (PropertyListing) -> Unit,
-    private val onItemLongClick: (PropertyListing) -> Boolean  // ← добавлено
+    private val onItemLongClick: (PropertyListing) -> Boolean
 ) : RecyclerView.Adapter<PropertyListingAdapter.ViewHolder>() {
 
     private var listings = listOf<PropertyListing>()
@@ -31,10 +33,7 @@ class PropertyListingAdapter(
         val listing = listings[position]
         holder.bind(listing)
 
-        // Короткое нажатие
         holder.itemView.setOnClickListener { onItemClick(listing) }
-
-        // Долгое нажатие
         holder.itemView.setOnLongClickListener {
             onItemLongClick(listing)
         }
@@ -50,6 +49,7 @@ class PropertyListingAdapter(
         private val tvRooms: TextView = itemView.findViewById(R.id.tvRooms)
         private val tvFloor: TextView = itemView.findViewById(R.id.tvFloor)
         private val tvNegotiable: TextView = itemView.findViewById(R.id.tvNegotiable)
+        private val ivThumbnail: ImageView = itemView.findViewById(R.id.ivThumbnail)
 
         fun bind(listing: PropertyListing) {
             tvTransactionType.text = listing.transactionType
@@ -64,25 +64,27 @@ class PropertyListingAdapter(
                 "Price is not selected"
             }
             tvPrice.text = priceText
-
             tvPropertyType.text = listing.propertyType
 
-            // Build address string
             val address = buildString {
                 append(listing.locality)
                 if (listing.street.isNotBlank()) append(", st. ${listing.street}")
                 if (listing.houseNumber.isNotBlank()) append(", h. ${listing.houseNumber}")
             }
             tvAddress.text = address
-
-            // Rooms
             tvRooms.text = if (listing.rooms != null) "${listing.rooms} rooms" else ""
-
-            // Floor
             tvFloor.text = if (listing.floor != null) "${listing.floor} floor" else ""
-
-            // Negotiable
             tvNegotiable.text = if (listing.negotiable) "Bargain is possible" else "Without bargain"
+
+            // Load first image if available
+            if (listing.imageUrls.isNotEmpty()) {
+                Glide.with(itemView.context)
+                    .load(listing.imageUrls.first())
+                    .centerCrop()
+                    .into(ivThumbnail)
+            } else {
+                ivThumbnail.setImageResource(0)
+            }
         }
     }
 }

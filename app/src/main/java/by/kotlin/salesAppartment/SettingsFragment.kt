@@ -1,12 +1,14 @@
+// /app/src/main/java/by/kotlin/salesAppartment/SettingsFragment.kt
 package by.kotlin.salesAppartment
 
 import android.app.AlertDialog
 import android.content.Context
-import android.content.DialogInterface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CompoundButton
+import android.widget.Switch
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.fragment.app.Fragment
@@ -16,6 +18,7 @@ class SettingsFragment : Fragment() {
 
     private lateinit var tvLanguage: TextView
     private lateinit var tvTheme: TextView
+    private lateinit var switchNotifications: Switch
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -25,12 +28,21 @@ class SettingsFragment : Fragment() {
 
         tvLanguage = view.findViewById(R.id.tvLanguage)
         tvTheme = view.findViewById(R.id.tvTheme)
+        switchNotifications = view.findViewById(R.id.switchNotifications)
 
         loadSettings()
 
-        // Click listeners on the whole rows
         view.findViewById<View>(R.id.layoutLanguage).setOnClickListener { showLanguageDialog() }
         view.findViewById<View>(R.id.layoutTheme).setOnClickListener { showThemeDialog() }
+
+        switchNotifications.setOnCheckedChangeListener { _, isChecked ->
+            saveNotificationSetting(isChecked)
+            if (isChecked) {
+                NotificationWorker.schedule(requireContext())
+            } else {
+                NotificationWorker.cancel(requireContext())
+            }
+        }
 
         return view
     }
@@ -42,7 +54,7 @@ class SettingsFragment : Fragment() {
 
         AlertDialog.Builder(requireContext())
             .setTitle(getString(R.string.language_label))
-            .setSingleChoiceItems(languages, checkedItem) { dialog: DialogInterface, which: Int ->
+            .setSingleChoiceItems(languages, checkedItem) { dialog, which ->
                 val selected = languages[which]
                 tvLanguage.text = selected
                 saveLanguage(selected)
@@ -60,7 +72,7 @@ class SettingsFragment : Fragment() {
 
         AlertDialog.Builder(requireContext())
             .setTitle(getString(R.string.theme_label))
-            .setSingleChoiceItems(themes, checkedItem) { dialog: DialogInterface, which: Int ->
+            .setSingleChoiceItems(themes, checkedItem) { dialog, which ->
                 val selected = themes[which]
                 tvTheme.text = selected
                 saveTheme(selected)
@@ -72,23 +84,28 @@ class SettingsFragment : Fragment() {
     }
 
     private fun saveLanguage(lang: String) {
-        val prefs = requireContext().getSharedPreferences("settings_prefs", Context.MODE_PRIVATE)
-        prefs.edit().putString("language", lang).apply()
+        requireContext().getSharedPreferences("settings_prefs", Context.MODE_PRIVATE)
+            .edit().putString("language", lang).apply()
     }
 
     private fun saveTheme(theme: String) {
-        val prefs = requireContext().getSharedPreferences("settings_prefs", Context.MODE_PRIVATE)
-        prefs.edit().putString("theme", theme).apply()
+        requireContext().getSharedPreferences("settings_prefs", Context.MODE_PRIVATE)
+            .edit().putString("theme", theme).apply()
+    }
+
+    private fun saveNotificationSetting(enabled: Boolean) {
+        requireContext().getSharedPreferences("settings_prefs", Context.MODE_PRIVATE)
+            .edit().putBoolean("notifications_enabled", enabled).apply()
     }
 
     private fun loadSettings() {
         val prefs = requireContext().getSharedPreferences("settings_prefs", Context.MODE_PRIVATE)
         tvLanguage.text = prefs.getString("language", getString(R.string.language_placeholder))
         tvTheme.text = prefs.getString("theme", getString(R.string.theme_placeholder))
+        switchNotifications.isChecked = prefs.getBoolean("notifications_enabled", false)
     }
 
     private fun applyLanguage() {
-        // Recreate activity – the language will be applied in attachBaseContext
         requireActivity().recreate()
     }
 

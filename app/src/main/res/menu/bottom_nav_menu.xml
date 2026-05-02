@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item android:title="Catalog"
+    <item android:title="@string/catalog_title"
         android:icon="@drawable/baseline_house_24"
         android:id="@+id/catalog"/>
 
     <item android:id="@+id/newitem"
         android:icon="@drawable/outline_add_diamond_24"
-        android:title="New Item" />
+        android:title="@string/new_title" />
 
     <item
         android:id="@+id/profile"
         android:icon="@drawable/outline_person_24"
-        android:title="Profile" />
+        android:title="@string/profile_title" />
 
-    <item android:title="Settings"
+    <item android:title="@string/settings_title"
         android:icon="@drawable/outline_settings_24"
         android:id="@+id/settings"/>
 

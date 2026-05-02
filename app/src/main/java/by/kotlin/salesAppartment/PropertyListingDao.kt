@@ -23,4 +23,7 @@ interface PropertyListingDao {
 
     @Query("SELECT * FROM property_listings WHERE id = :id")
     suspend fun getListingById(id: Long): PropertyListing?
+
+    @Query("SELECT COUNT(*) FROM property_listings")
+    suspend fun getListingCount(): Int
 }

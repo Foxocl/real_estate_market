@@ -1,18 +1,23 @@
 package by.kotlin.salesAppartment
 
 import android.app.AlertDialog
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import by.kotlin.salesAppartment.databinding.FragmentNewItemBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
+
 class NewItemFragment : Fragment() {
 
     private var _binding: FragmentNewItemBinding? = null
@@ -21,10 +26,19 @@ class NewItemFragment : Fragment() {
     private lateinit var db: PropertyDatabase
     private lateinit var nominatimViewModel: NominatimViewModel
     private var listingId: Long = -1
+    private val selectedImageUris = mutableListOf<Uri>()
+    private lateinit var imageAdapter: ImagePreviewAdapter
 
     private val propertyTypes = listOf(
         "Flat", "Cottage", "Room", "Garage", "Commercial real estate"
     )
+
+    private val pickImagesLauncher =
+        registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+            selectedImageUris.clear()
+            selectedImageUris.addAll(uris)
+            imageAdapter.submitList(uris.toList())
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,8 +61,21 @@ class NewItemFragment : Fragment() {
         db = PropertyDatabase.getInstance(requireContext())
         nominatimViewModel = ViewModelProvider(this).get(NominatimViewModel::class.java)
 
+        // Инициализация адаптера для миниатюр выбранных изображений
+        imageAdapter = ImagePreviewAdapter { uri ->
+            // Здесь может быть открытие полноэкранного просмотра
+        }
+        binding.rvImages.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            adapter = imageAdapter
+        }
+
         binding.layoutPropertyType.setOnClickListener {
             showPropertyTypeDialog()
+        }
+
+        binding.btnSelectImages.setOnClickListener {
+            pickImagesLauncher.launch("image/*")
         }
 
         if (listingId != -1L) {
@@ -82,6 +109,7 @@ class NewItemFragment : Fragment() {
                     binding.radioNegotiableYes.isChecked = listing.negotiable
                     binding.radioNegotiableNo.isChecked = !listing.negotiable
                     binding.etPrice.setText(listing.price?.toString() ?: "")
+                    imageAdapter.submitUrls(listing.imageUrls)
                 }
             }
         }
@@ -101,6 +129,23 @@ class NewItemFragment : Fragment() {
             .show()
     }
 
+    /**
+     * Загружает выбранные изображения в ImgBB и возвращает список URL.
+     */
+    private suspend fun uploadSelectedImages(): List<String> {
+        val urls = mutableListOf<String>()
+        for (uri in selectedImageUris) {
+            val file = File(requireContext().cacheDir, "upload_${System.currentTimeMillis()}.jpg")
+            requireContext().contentResolver.openInputStream(uri)?.use { input ->
+                file.outputStream().use { output -> input.copyTo(output) }
+            }
+            // Заменяем вызов CloudStorageManager на ImgBBManager
+            val url = ImgBBManager.uploadImage(file, "listing_${System.currentTimeMillis()}")
+            if (url != null) urls.add(url)
+        }
+        return urls
+    }
+
     private fun saveNewListing() {
         if (!validateFields()) return
 
@@ -114,11 +159,11 @@ class NewItemFragment : Fragment() {
         val houseNumber = binding.etHouseNumber.text.toString().trim()
         val negotiable = binding.radioNegotiableYes.isChecked
         val price = binding.etPrice.text.toString().toDoubleOrNull()
-
         val fullAddress = "$country, $locality, $street $houseNumber"
 
         lifecycleScope.launch(Dispatchers.IO) {
             val coords = nominatimViewModel.fetchCoordinates(fullAddress)
+            val imageUrls = uploadSelectedImages()
 
             val listing = PropertyListing(
                 transactionType = transactionType,
@@ -132,9 +177,17 @@ class NewItemFragment : Fragment() {
                 negotiable = negotiable,
                 price = price,
                 latitude = coords?.first,
-                longitude = coords?.second
+                longitude = coords?.second,
+                imageUrls = imageUrls
             )
             db.propertyListingDao().insert(listing)
+
+            // Firestore — опционально
+            try {
+                FirestoreRepository().addListing(listing)
+            } catch (e: Exception) {
+                // Ошибка сети — данные уже в локальной базе
+            }
 
             withContext(Dispatchers.Main) {
                 Toast.makeText(requireContext(), "Saved", Toast.LENGTH_SHORT).show()
@@ -159,6 +212,9 @@ class NewItemFragment : Fragment() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             val existing = db.propertyListingDao().getListingById(listingId)
+            val newImageUrls = uploadSelectedImages()
+            val finalImageUrls = if (selectedImageUris.isEmpty()) existing?.imageUrls ?: emptyList() else newImageUrls
+
             val updatedListing = PropertyListing(
                 id = listingId,
                 transactionType = transactionType,
@@ -173,9 +229,16 @@ class NewItemFragment : Fragment() {
                 price = price,
                 createdAt = existing?.createdAt ?: System.currentTimeMillis(),
                 latitude = existing?.latitude,
-                longitude = existing?.longitude
+                longitude = existing?.longitude,
+                imageUrls = finalImageUrls
             )
             db.propertyListingDao().update(updatedListing)
+
+            // Firestore — опционально
+            try {
+                // FirestoreRepository().updateListing(firestoreId, updatedListing)
+            } catch (_: Exception) {}
+
             withContext(Dispatchers.Main) {
                 Toast.makeText(requireContext(), "Updated", Toast.LENGTH_SHORT).show()
                 parentFragmentManager.popBackStack()
@@ -190,7 +253,12 @@ class NewItemFragment : Fragment() {
             .setPositiveButton("Delete") { _, _ ->
                 lifecycleScope.launch(Dispatchers.IO) {
                     val existing = db.propertyListingDao().getListingById(listingId)
-                    existing?.let { db.propertyListingDao().delete(it) }
+                    existing?.let {
+                        db.propertyListingDao().delete(it)
+                        try {
+                            // FirestoreRepository().deleteListing(firestoreId)
+                        } catch (_: Exception) {}
+                    }
                     withContext(Dispatchers.Main) {
                         Toast.makeText(requireContext(), "Deleted", Toast.LENGTH_SHORT).show()
                         parentFragmentManager.popBackStack()

@@ -34,5 +34,6 @@ data class PropertyListing(
     val createdAt: Long = System.currentTimeMillis(),
 
     var latitude: Double? = null,
-    var longitude: Double? = null
+    var longitude: Double? = null,
+    val imageUrls: List<String> = emptyList()
 )

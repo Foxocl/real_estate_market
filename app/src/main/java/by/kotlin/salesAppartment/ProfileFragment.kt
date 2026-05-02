@@ -24,7 +24,6 @@ class ProfileFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_profile, container, false)
 
-        // Находим элементы
         tvName = view.findViewById(R.id.tvName)
         tvEmail = view.findViewById(R.id.tvEmail)
         tvPhone = view.findViewById(R.id.tvPhone)
@@ -33,10 +32,8 @@ class ProfileFragment : Fragment() {
         val btnEditEmail = view.findViewById<ImageButton>(R.id.btnEditEmail)
         val btnEditPhone = view.findViewById<ImageButton>(R.id.btnEditPhone)
 
-        // Загружаем сохранённые значения
         loadSavedData()
 
-        // Обработчики нажатий
         btnEditName.setOnClickListener { showEditDialog("Name", tvName) }
         btnEditEmail.setOnClickListener { showEditDialog("Email", tvEmail) }
         btnEditPhone.setOnClickListener { showEditDialog("Phone", tvPhone) }
@@ -104,7 +101,6 @@ class ProfileFragment : Fragment() {
     private fun loadSavedData() {
         val prefs = requireContext().getSharedPreferences("profile_prefs", Context.MODE_PRIVATE)
 
-        // Загружаем, если есть или оставляем плейсхолдеры XML
         prefs.getString("Name", null)?.let { tvName.text = it }
         prefs.getString("Email", null)?.let { tvEmail.text = it }
         prefs.getString("Phone", null)?.let { tvPhone.text = it }

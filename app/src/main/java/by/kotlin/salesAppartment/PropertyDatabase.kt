@@ -3,16 +3,19 @@ package by.kotlin.salesAppartment
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import android.content.Context
 
 @Database(
     entities = [PropertyListing::class, CachedGeocode::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
+@TypeConverters(Converters::class)
 abstract class PropertyDatabase : RoomDatabase() {
     abstract fun propertyListingDao(): PropertyListingDao
     abstract fun geocodeDao(): GeocodeDao
+
     companion object {
         @Volatile
         private var INSTANCE: PropertyDatabase? = null
@@ -24,7 +27,7 @@ abstract class PropertyDatabase : RoomDatabase() {
                     PropertyDatabase::class.java,
                     "property_database"
                 ).fallbackToDestructiveMigration()
-                .build()
+                 .build()
                 INSTANCE = instance
                 instance
             }

@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">My Application</string>
     <string name="profile_title">ПРОФИЛЬ</string>
-    <string name="new_title">НОВАЯ ЖИЛПЛОЩАДЬ</string>
+    <string name="new_title">Жилплощадь</string>
     <string name="catalog_title">КАТАЛОГ</string>
     <string name="name_label">Имя</string>
     <string name="name_placeholder">Профиль</string>
@@ -42,4 +42,19 @@
     <string name="save">Сохранить</string>
     <string name="delete">Удалить</string>
     <string name="country">Страна</string>
+    <string name="search_hint">Поиск по ключевым словам</string>
+    <string-array name="filter_options">
+        <item>Все</item>
+        <item>Продажа</item>
+        <item>Аренда</item>
+    </string-array>
+    <string-array name="sort_options">
+        <item>Дата (сначала новые)</item>
+        <item>Дата (сначала старые)</item>
+        <item>Цена (по возрастанию)</item>
+        <item>Цена (по убыванию)</item>
+    </string-array>
+    <string name="choose_images">Выбрать изображения</string>
+    <string name="notification_label">Ежедневное уведомление</string>
+    <string name="thumbnail">Иконка</string>
 </resources>

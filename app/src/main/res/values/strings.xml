@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">My Application</string>
     <string name="profile_title">PROFILE</string>
-    <string name="new_title">NEW ACCOMMODATION</string>
+    <string name="new_title">Accomodation</string>
     <string name="catalog_title">CATALOG</string>
     <string name="name_label">Name</string>
     <string name="name_placeholder">Profile</string>
@@ -41,4 +41,19 @@
     <string name="save">Save</string>
     <string name="delete">Delete</string>
     <string name="country">Country</string>
+    <string name="search_hint">Search by keywords</string>
+    <string-array name="filter_options">
+        <item>All</item>
+        <item>Sale</item>
+        <item>Rent</item>
+    </string-array>
+    <string-array name="sort_options">
+        <item>Date (newest)</item>
+        <item>Date (oldest)</item>
+        <item>Price (low to high)</item>
+        <item>Price (high to low)</item>
+    </string-array>
+    <string name="choose_images">Choose Images</string>
+    <string name="notification_label">Daily notification</string>
+    <string name="thumbnail">Listing thumbnail</string>
 </resources>
