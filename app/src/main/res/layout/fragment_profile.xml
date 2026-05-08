@@ -137,7 +137,6 @@
                 app:tint="?attr/colorControlNormal" />
         </RelativeLayout>
 
-        <!-- Блок телефона -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -194,14 +193,12 @@
                 app:tint="?attr/colorControlNormal" />
         </RelativeLayout>
 
-        <!-- Разделитель -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginBottom="16dp"
             android:background="?attr/colorOutline" />
 
-        <!-- Кликабельный пункт "Просмотр добавленных предложений" -->
         <LinearLayout
             android:id="@+id/btnMyProducts"
             android:layout_width="match_parent"
@@ -217,8 +214,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/outline_domain_add_24"
-                app:tint="?attr/colorControlNormal"
-                android:importantForAccessibility="no" />
+                app:tint="?attr/colorControlNormal"/>
 
             <TextView
                 android:layout_width="0dp"
@@ -228,7 +224,6 @@
                 android:text="@string/view_offers"
                 android:textColor="?android:attr/textColorPrimary"
                 android:textSize="16sp"
-                android:importantForAccessibility="no"
                 android:maxLines="1"
                 android:ellipsize="end" />
 
@@ -237,9 +232,21 @@
                 android:layout_height="24dp"
                 android:src="@android:drawable/arrow_up_float"
                 app:tint="?attr/colorControlNormal"
-                android:rotation="90"
-                android:importantForAccessibility="no" />
+                android:rotation="90"/>
         </LinearLayout>
 
+        <Button
+            android:id="@+id/btnLogout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/logout" />
+        <Button
+            android:id="@+id/btnDeleteAccount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/delete"
+            android:backgroundTint="@android:color/holo_red_dark" />
     </LinearLayout>
 </ScrollView>

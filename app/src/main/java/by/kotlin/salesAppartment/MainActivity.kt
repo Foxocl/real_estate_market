@@ -2,16 +2,19 @@ package by.kotlin.salesAppartment
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import by.kotlin.salesAppartment.databinding.ActivityMainBinding
+import com.google.firebase.auth.FirebaseAuth
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
@@ -35,8 +38,8 @@ class MainActivity : AppCompatActivity() {
         val prefs = context.getSharedPreferences(PREFS_SETTINGS, Context.MODE_PRIVATE)
         val language = prefs.getString(KEY_LANGUAGE, null)
         val locale = when (language) {
-            "Русский" -> Locale("ru")
-            else -> Locale("en")
+            "Русский" -> Locale.forLanguageTag("ru")
+            else -> Locale.forLanguageTag("en")
         }
         val config = Configuration(context.resources.configuration)
         config.setLocale(locale)
@@ -44,9 +47,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Apply saved theme before any UI is created
         applySavedTheme()
         super.onCreate(savedInstanceState)
+
+        val auth = FirebaseAuth.getInstance()
+        val currentUser = auth.currentUser
+
+        if (currentUser == null) {
+            startActivity(Intent(this, RegistrationActivity::class.java))
+            finish()
+            return
+        }
+
+        if (!currentUser.isEmailVerified) {
+            Toast.makeText(this, "Please verify your email address first.", Toast.LENGTH_LONG).show()
+            startActivity(Intent(this, RegistrationActivity::class.java))
+            finish()
+            return
+        }
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -76,16 +94,6 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences(PREFS_SETTINGS, MODE_PRIVATE)
         if (prefs.getBoolean("notifications_enabled", false)) {
             NotificationWorker.schedule(this)
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_NOTIFICATION_PERMISSION) {
         }
     }
 

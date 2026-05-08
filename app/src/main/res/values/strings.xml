@@ -56,4 +56,15 @@
     <string name="choose_images">Choose Images</string>
     <string name="notification_label">Daily notification</string>
     <string name="thumbnail">Listing thumbnail</string>
+
+    <string name="logout">Loguot</string>
+    <string name="login">Login</string>
+    <string name="password">Password</string>
+    <string name="registration">Registration</string>
+    <string name="share">Share</string>
+    <string name="location">My location</string>
+    <string name="photo">Camera</string>
+    <string name="pic">Choose a picture</string>>
+    <string name="forgot">Forgot password?</string>>
+    <string name="resend">Resend verification email</string>
 </resources>

@@ -1,8 +1,11 @@
 package by.kotlin.salesAppartment
 
+import android.content.Intent
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -34,9 +37,7 @@ class PropertyListingAdapter(
         holder.bind(listing)
 
         holder.itemView.setOnClickListener { onItemClick(listing) }
-        holder.itemView.setOnLongClickListener {
-            onItemLongClick(listing)
-        }
+        holder.itemView.setOnLongClickListener { onItemLongClick(listing) }
     }
 
     override fun getItemCount() = listings.size
@@ -50,22 +51,18 @@ class PropertyListingAdapter(
         private val tvFloor: TextView = itemView.findViewById(R.id.tvFloor)
         private val tvNegotiable: TextView = itemView.findViewById(R.id.tvNegotiable)
         private val ivThumbnail: ImageView = itemView.findViewById(R.id.ivThumbnail)
+        private val btnShare: ImageButton = itemView.findViewById(R.id.btnShare)
 
         fun bind(listing: PropertyListing) {
             tvTransactionType.text = listing.transactionType
-
-            // Format price with spaces as thousand separators
             val priceText = if (listing.price != null) {
                 val formatter = DecimalFormat("#,##0", DecimalFormatSymbols(Locale.getDefault()).apply {
                     groupingSeparator = ' '
                 })
                 "${formatter.format(listing.price)} $"
-            } else {
-                "Price is not selected"
-            }
+            } else "Price is not selected"
             tvPrice.text = priceText
             tvPropertyType.text = listing.propertyType
-
             val address = buildString {
                 append(listing.locality)
                 if (listing.street.isNotBlank()) append(", st. ${listing.street}")
@@ -76,7 +73,6 @@ class PropertyListingAdapter(
             tvFloor.text = if (listing.floor != null) "${listing.floor} floor" else ""
             tvNegotiable.text = if (listing.negotiable) "Bargain is possible" else "Without bargain"
 
-            // Load first image if available
             if (listing.imageUrls.isNotEmpty()) {
                 Glide.with(itemView.context)
                     .load(listing.imageUrls.first())
@@ -84,6 +80,19 @@ class PropertyListingAdapter(
                     .into(ivThumbnail)
             } else {
                 ivThumbnail.setImageResource(0)
+            }
+
+            btnShare.setOnClickListener {
+                val shareText = "${listing.transactionType}: ${listing.propertyType} - ${priceText}, ${address}"
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, shareText)
+                    if (listing.imageUrls.isNotEmpty()) {
+                        type = "image/*"
+                        putExtra(Intent.EXTRA_STREAM, Uri.parse(listing.imageUrls.first()))
+                    }
+                }
+                itemView.context.startActivity(Intent.createChooser(shareIntent, "Share via"))
             }
         }
     }

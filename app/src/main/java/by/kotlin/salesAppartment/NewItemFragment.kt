@@ -1,22 +1,34 @@
 package by.kotlin.salesAppartment
 
+import android.Manifest
 import android.app.AlertDialog
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityCompat
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import by.kotlin.salesAppartment.databinding.FragmentNewItemBinding
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.Locale
 
 class NewItemFragment : Fragment() {
 
@@ -28,6 +40,7 @@ class NewItemFragment : Fragment() {
     private var listingId: Long = -1
     private val selectedImageUris = mutableListOf<Uri>()
     private lateinit var imageAdapter: ImagePreviewAdapter
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     private val propertyTypes = listOf(
         "Flat", "Cottage", "Room", "Garage", "Commercial real estate"
@@ -35,10 +48,13 @@ class NewItemFragment : Fragment() {
 
     private val pickImagesLauncher =
         registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
-            selectedImageUris.clear()
             selectedImageUris.addAll(uris)
-            imageAdapter.submitList(uris.toList())
+            imageAdapter.submitList(selectedImageUris.toList())
         }
+
+    private lateinit var takePhotoLauncher: ActivityResultLauncher<Uri>
+    private lateinit var cameraPermissionLauncher: ActivityResultLauncher<String>
+    private lateinit var locationPermissionLauncher: ActivityResultLauncher<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,23 +76,50 @@ class NewItemFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         db = PropertyDatabase.getInstance(requireContext())
         nominatimViewModel = ViewModelProvider(this).get(NominatimViewModel::class.java)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
 
-        // Инициализация адаптера для миниатюр выбранных изображений
-        imageAdapter = ImagePreviewAdapter { uri ->
-            // Здесь может быть открытие полноэкранного просмотра
+        cameraPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            if (granted) launchCamera()
+            else showCameraPermissionDeniedDialog()
         }
+
+        locationPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            if (granted) getCurrentLocation()
+            else showLocationPermissionDeniedDialog()
+        }
+
+        imageAdapter = ImagePreviewAdapter { uri -> }
         binding.rvImages.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             adapter = imageAdapter
         }
 
-        binding.layoutPropertyType.setOnClickListener {
-            showPropertyTypeDialog()
-        }
-
         binding.btnSelectImages.setOnClickListener {
             pickImagesLauncher.launch("image/*")
         }
+
+        takePhotoLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+            if (success) imageAdapter.submitList(selectedImageUris.toList())
+        }
+        binding.btnTakePhoto.setOnClickListener {
+            if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED
+            ) launchCamera()
+            else cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+
+        binding.btnMyLocation.setOnClickListener {
+            if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED
+            ) getCurrentLocation()
+            else locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+
+        binding.layoutPropertyType.setOnClickListener { showPropertyTypeDialog() }
 
         if (listingId != -1L) {
             loadListingForEdit()
@@ -86,10 +129,76 @@ class NewItemFragment : Fragment() {
         } else {
             binding.btnDelete.visibility = View.GONE
         }
-
         binding.btnSave.setOnClickListener {
             if (listingId == -1L) saveNewListing() else updateListing()
         }
+    }
+
+    private fun launchCamera() {
+        val photoUri = createImageUri()
+        if (photoUri != null) {
+            selectedImageUris.add(photoUri)
+            takePhotoLauncher.launch(photoUri)
+        }
+    }
+
+    private fun createImageUri(): Uri? {
+        val imageFile = File(requireContext().cacheDir, "photo_${System.currentTimeMillis()}.jpg")
+        return FileProvider.getUriForFile(
+            requireContext(),
+            "${requireContext().packageName}.fileprovider",
+            imageFile
+        )
+    }
+
+    private fun getCurrentLocation() {
+        try {
+            if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) return
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                location?.let {
+                    val lat = it.latitude
+                    val lon = it.longitude
+                    val geocoder = Geocoder(requireContext(), Locale.getDefault())
+                    val addresses = geocoder.getFromLocation(lat, lon, 1)
+                    if (!addresses.isNullOrEmpty()) {
+                        val addr = addresses[0]
+                        binding.etCountry.setText(addr.countryName ?: "")
+                        binding.etLocality.setText(addr.locality ?: addr.adminArea ?: "")
+                        binding.etStreet.setText(addr.thoroughfare ?: "")
+                        binding.etHouseNumber.setText(addr.subThoroughfare ?: "")
+                    }
+                }
+            }
+        } catch (e: SecurityException) {
+            Toast.makeText(requireContext(), "Location permission is required", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showCameraPermissionDeniedDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Camera Permission Required")
+            .setMessage("This app needs camera access to take photos. Please grant camera permission in app settings.")
+            .setPositiveButton("Open Settings") { _, _ ->
+                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", requireContext().packageName, null)
+                })
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showLocationPermissionDeniedDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Location Permission Required")
+            .setMessage("This app needs location access to fill your address automatically. Please grant location permission in app settings.")
+            .setPositiveButton("Open Settings") { _, _ ->
+                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", requireContext().packageName, null)
+                })
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun loadListingForEdit() {
@@ -118,7 +227,6 @@ class NewItemFragment : Fragment() {
     private fun showPropertyTypeDialog() {
         val currentType = binding.tvTheme.text.toString()
         val checkedItem = propertyTypes.indexOf(currentType).takeIf { it >= 0 } ?: 0
-
         AlertDialog.Builder(requireContext())
             .setTitle("Select property type")
             .setSingleChoiceItems(propertyTypes.toTypedArray(), checkedItem) { dialog, which ->
@@ -129,9 +237,6 @@ class NewItemFragment : Fragment() {
             .show()
     }
 
-    /**
-     * Загружает выбранные изображения в ImgBB и возвращает список URL.
-     */
     private suspend fun uploadSelectedImages(): List<String> {
         val urls = mutableListOf<String>()
         for (uri in selectedImageUris) {
@@ -139,7 +244,6 @@ class NewItemFragment : Fragment() {
             requireContext().contentResolver.openInputStream(uri)?.use { input ->
                 file.outputStream().use { output -> input.copyTo(output) }
             }
-            // Заменяем вызов CloudStorageManager на ImgBBManager
             val url = ImgBBManager.uploadImage(file, "listing_${System.currentTimeMillis()}")
             if (url != null) urls.add(url)
         }
@@ -148,7 +252,6 @@ class NewItemFragment : Fragment() {
 
     private fun saveNewListing() {
         if (!validateFields()) return
-
         val transactionType = if (binding.radioSale.isChecked) "Sale" else "Rent"
         val propertyType = binding.tvTheme.text.toString()
         val rooms = binding.etRooms.text.toString().toIntOrNull()
@@ -159,11 +262,12 @@ class NewItemFragment : Fragment() {
         val houseNumber = binding.etHouseNumber.text.toString().trim()
         val negotiable = binding.radioNegotiableYes.isChecked
         val price = binding.etPrice.text.toString().toDoubleOrNull()
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
         val fullAddress = "$country, $locality, $street $houseNumber"
 
         lifecycleScope.launch(Dispatchers.IO) {
-            val coords = nominatimViewModel.fetchCoordinates(fullAddress)
             val imageUrls = uploadSelectedImages()
+            val coords = nominatimViewModel.fetchCoordinates(fullAddress)
 
             val listing = PropertyListing(
                 transactionType = transactionType,
@@ -178,16 +282,18 @@ class NewItemFragment : Fragment() {
                 price = price,
                 latitude = coords?.first,
                 longitude = coords?.second,
-                imageUrls = imageUrls
+                imageUrls = imageUrls,
+                userId = currentUserId
             )
-            db.propertyListingDao().insert(listing)
 
-            // Firestore — опционально
-            try {
+            val firestoreId = try {
                 FirestoreRepository().addListing(listing)
             } catch (e: Exception) {
-                // Ошибка сети — данные уже в локальной базе
+                null
             }
+
+            val listingWithId = listing.copy(firestoreId = firestoreId)
+            db.propertyListingDao().upsert(listingWithId)
 
             withContext(Dispatchers.Main) {
                 Toast.makeText(requireContext(), "Saved", Toast.LENGTH_SHORT).show()
@@ -198,7 +304,6 @@ class NewItemFragment : Fragment() {
 
     private fun updateListing() {
         if (!validateFields()) return
-
         val transactionType = if (binding.radioSale.isChecked) "Sale" else "Rent"
         val propertyType = binding.tvTheme.text.toString()
         val rooms = binding.etRooms.text.toString().toIntOrNull()
@@ -209,14 +314,13 @@ class NewItemFragment : Fragment() {
         val houseNumber = binding.etHouseNumber.text.toString().trim()
         val negotiable = binding.radioNegotiableYes.isChecked
         val price = binding.etPrice.text.toString().toDoubleOrNull()
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
         lifecycleScope.launch(Dispatchers.IO) {
-            val existing = db.propertyListingDao().getListingById(listingId)
-            val newImageUrls = uploadSelectedImages()
-            val finalImageUrls = if (selectedImageUris.isEmpty()) existing?.imageUrls ?: emptyList() else newImageUrls
+            val existing = db.propertyListingDao().getListingById(listingId) ?: return@launch
+            val newImageUrls = if (selectedImageUris.isEmpty()) existing.imageUrls else uploadSelectedImages()
 
-            val updatedListing = PropertyListing(
-                id = listingId,
+            val updatedListing = existing.copy(
                 transactionType = transactionType,
                 propertyType = propertyType,
                 rooms = rooms,
@@ -227,17 +331,17 @@ class NewItemFragment : Fragment() {
                 houseNumber = houseNumber,
                 negotiable = negotiable,
                 price = price,
-                createdAt = existing?.createdAt ?: System.currentTimeMillis(),
-                latitude = existing?.latitude,
-                longitude = existing?.longitude,
-                imageUrls = finalImageUrls
+                imageUrls = newImageUrls,
+                userId = currentUserId
             )
+
             db.propertyListingDao().update(updatedListing)
 
-            // Firestore — опционально
-            try {
-                // FirestoreRepository().updateListing(firestoreId, updatedListing)
-            } catch (_: Exception) {}
+            existing.firestoreId?.let { fid ->
+                try {
+                    FirestoreRepository().updateListing(fid, updatedListing)
+                } catch (_: Exception) {}
+            }
 
             withContext(Dispatchers.Main) {
                 Toast.makeText(requireContext(), "Updated", Toast.LENGTH_SHORT).show()
@@ -254,10 +358,10 @@ class NewItemFragment : Fragment() {
                 lifecycleScope.launch(Dispatchers.IO) {
                     val existing = db.propertyListingDao().getListingById(listingId)
                     existing?.let {
+                        it.firestoreId?.let { fid ->
+                            try { FirestoreRepository().deleteListing(fid) } catch (_: Exception) {}
+                        }
                         db.propertyListingDao().delete(it)
-                        try {
-                            // FirestoreRepository().deleteListing(firestoreId)
-                        } catch (_: Exception) {}
                     }
                     withContext(Dispatchers.Main) {
                         Toast.makeText(requireContext(), "Deleted", Toast.LENGTH_SHORT).show()
@@ -270,26 +374,11 @@ class NewItemFragment : Fragment() {
     }
 
     private fun validateFields(): Boolean {
-        if (binding.tvTheme.text.isBlank()) {
-            binding.tvTheme.error = "Select property type"
-            return false
-        }
-        if (binding.etCountry.text.isBlank()) {
-            binding.etCountry.error = "Enter country"
-            return false
-        }
-        if (binding.etLocality.text.isBlank()) {
-            binding.etLocality.error = "Enter locality"
-            return false
-        }
-        if (binding.etStreet.text.isBlank()) {
-            binding.etStreet.error = "Enter street"
-            return false
-        }
-        if (binding.etHouseNumber.text.isBlank()) {
-            binding.etHouseNumber.error = "Enter house number"
-            return false
-        }
+        if (binding.tvTheme.text.isBlank()) { binding.tvTheme.error = "Select property type"; return false }
+        if (binding.etCountry.text.isBlank()) { binding.etCountry.error = "Enter country"; return false }
+        if (binding.etLocality.text.isBlank()) { binding.etLocality.error = "Enter locality"; return false }
+        if (binding.etStreet.text.isBlank()) { binding.etStreet.error = "Enter street"; return false }
+        if (binding.etHouseNumber.text.isBlank()) { binding.etHouseNumber.error = "Enter house number"; return false }
         return true
     }
 

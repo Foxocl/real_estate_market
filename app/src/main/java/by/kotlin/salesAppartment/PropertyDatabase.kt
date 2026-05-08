@@ -8,7 +8,7 @@ import android.content.Context
 
 @Database(
     entities = [PropertyListing::class, CachedGeocode::class],
-    version = 4,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

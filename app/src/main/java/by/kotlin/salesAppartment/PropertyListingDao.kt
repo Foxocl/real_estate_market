@@ -1,15 +1,11 @@
 package by.kotlin.salesAppartment
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.Query
-import androidx.room.Update
-import androidx.room.Delete
+import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PropertyListingDao {
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(listing: PropertyListing): Long
 
     @Update
@@ -26,4 +22,20 @@ interface PropertyListingDao {
 
     @Query("SELECT COUNT(*) FROM property_listings")
     suspend fun getListingCount(): Int
+
+    @Query("SELECT * FROM property_listings WHERE userId = :userId ORDER BY createdAt DESC")
+    fun getListingsByUser(userId: String): Flow<List<PropertyListing>>
+
+    @Query("SELECT * FROM property_listings WHERE firestoreId = :firestoreId LIMIT 1")
+    suspend fun getByFirestoreId(firestoreId: String): PropertyListing?
+
+    @Transaction
+    suspend fun upsert(listing: PropertyListing) {
+        val existing = listing.firestoreId?.let { getByFirestoreId(it) }
+        if (existing != null) {
+            update(listing.copy(id = existing.id))
+        } else {
+            insert(listing)
+        }
+    }
 }

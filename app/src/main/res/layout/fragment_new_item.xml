@@ -388,6 +388,12 @@
             android:layout_height="wrap_content"
             android:text="Choose Images"
             android:layout_marginBottom="8dp" />
+        <Button
+            android:id="@+id/btnTakePhoto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/photo"
+            android:layout_marginBottom="8dp" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvImages"
@@ -396,6 +402,13 @@
             android:orientation="horizontal"
             android:layout_marginBottom="16dp"
             tools:listitem="@layout/item_image_preview" />
+
+        <Button
+            android:id="@+id/btnMyLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/location"
+            android:layout_marginBottom="16dp" />
 
         <Button
             android:id="@+id/btnSave"
